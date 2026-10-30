@@ -1,98 +1,88 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { ChartNoAxesColumn, Pause, PawPrint, Settings } from 'lucide-react-native';
+import { useState } from 'react';
+import { Text, View, StyleSheet, Pressable } from 'react-native';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  useSafeAreaInsets
+} from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+
+  const [remainingTime, setRemainingTime] = useState('11:22');
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <SafeAreaProvider>
+    <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} edges={['top', 'bottom']}>
+      <View style={styles.header}></View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      <View style={styles.clock}>
+        <Text style={{fontSize: 56}}>{remainingTime}</Text>
+      </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      <View style={styles.session}>
+        <Pressable style={styles.pauseButton}>
+          <Pause style={{position: 'absolute', left: 16}} size={24} color="#000000" />
+          <Text style={{fontSize: 20}}>Pause</Text>
+        </Pressable>
+      </View>
+      
+      <View style={[styles.footer, {marginBottom: insets.bottom}]}>
+        <View style={styles.footerItem}>
+          <PawPrint color='grey' />
+          <Text style={{color: 'grey'}}>Focus</Text>
+        </View>
+        <View style={styles.footerItem}>
+          <ChartNoAxesColumn color='grey' />
+          <Text style={{color: 'grey'}}>Sessions</Text>
+        </View>
+        <View style={styles.footerItem}>
+          <Settings color='grey' />
+          <Text style={{color: 'grey'}}>Settings</Text>
+        </View>
+      </View>
+    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  header: {
+
+  },
+  clock: {
+    alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'lightgrey',
+    width: 240,
+    height: 240,
+    borderRadius: '50%'
+  },
+  session: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 48
+  },
+  footer: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
+  footerItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  pauseButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#4fcf6f',
+    width: '70%',
+    padding: 18,
+    borderRadius: 48,
+    flexDirection: 'row'
+  }
 });
