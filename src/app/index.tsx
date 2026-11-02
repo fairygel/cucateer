@@ -1,5 +1,5 @@
 import { ChartNoAxesColumn, Pause, PawPrint, Settings } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, View, StyleSheet, Pressable } from 'react-native';
 import {
   SafeAreaProvider,
@@ -10,7 +10,33 @@ import {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
-  const [remainingTime, setRemainingTime] = useState('11:22');
+  const [durationMs, setDurationMs] = useState(2 * 60 * 1000);
+  const [remainingTime, setRemainingTime] = useState(0);
+  const [endAt, setEndAt] = useState(0);
+
+  useEffect(() => {
+    setRemainingTime(durationMs);
+    setEndAt(Date.now() + durationMs)
+  }, [])
+  
+  useEffect(() => {
+    if (!endAt) return;
+    const id = setInterval(() => {
+      const left = Math.max(0, endAt - Date.now());
+      setRemainingTime(left);
+      if (left === 0) clearInterval(id);
+    }, 250);
+    return () => clearInterval(id)
+  }, [endAt])
+  
+  const timeToString = () => {
+    const totalSeconds = Math.ceil(remainingTime / 1000);
+
+    const mm = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+    const ss = (totalSeconds % 60).toString().padStart(2, "0");
+    
+    return `${mm}:${ss}`;
+  };
 
   return (
     <SafeAreaProvider>
@@ -18,7 +44,7 @@ export default function HomeScreen() {
       <View style={styles.header}></View>
 
       <View style={styles.clock}>
-        <Text style={{fontSize: 56}}>{remainingTime}</Text>
+        <Text style={{fontSize: 56}}>{timeToString()}</Text>
       </View>
 
       <View style={styles.session}>
@@ -28,7 +54,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
       
-      <View style={[styles.footer, {marginBottom: insets.bottom}]}>
+      <View style={[styles.footer, {marginBottom: insets.bottom + 8}]}>
         <View style={styles.footerItem}>
           <PawPrint color='grey' />
           <Text style={{color: 'grey'}}>Focus</Text>
