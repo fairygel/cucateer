@@ -1,5 +1,6 @@
 import {
   ChartNoAxesColumn,
+  CircleLetterA,
   Pause,
   PawPrint,
   Play,
@@ -13,11 +14,17 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import Svg, { Circle, Path } from "react-native-svg";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
-  const [durationMs, setDurationMs] = useState(2 * 60 * 1000);
+  const circleRadius = 120;
+  const circleSize = circleRadius*2;
+  const stroke = 10;
+  const dashCount = 2 * Math.PI * (circleRadius - stroke);
+
+  const [durationMs, setDurationMs] = useState(60 * 1000);
   const [remainingTime, setRemainingTime] = useState(0);
   const [endAt, setEndAt] = useState(0);
 
@@ -25,7 +32,7 @@ export default function HomeScreen() {
 
   const setOnPause = (onPause: boolean) => {
     if (onPause) {
-      setRemainingTime(endAt - Date.now());
+      setRemainingTime(getLeftTime());
       setEndAt(0);
     } else {
       setEndAt(Date.now() + remainingTime);
@@ -50,7 +57,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!endAt) return;
     const id = setInterval(() => {
-      const left = Math.max(0, endAt - Date.now());
+      const left = getLeftTime();
 
       setRemainingTime(left);
 
@@ -58,6 +65,14 @@ export default function HomeScreen() {
     }, 250);
     return () => clearInterval(id);
   }, [endAt]);
+
+  const getLeftTime = () => {
+    return Math.max(0, endAt - Date.now());
+  };
+
+  const getProgress = () => {
+    return (durationMs - remainingTime) / durationMs;
+  };
 
   const timeToString = () => {
     const totalSeconds = Math.ceil(remainingTime / 1000);
@@ -78,8 +93,46 @@ export default function HomeScreen() {
       >
         <View style={styles.header}></View>
 
-        <View style={styles.clock}>
-          <Text style={{ fontSize: 56 }}>{timeToString()}</Text>
+        <View style={{ alignItems: "center", justifyContent: "center" }}>
+          <Svg
+            width={circleSize}
+            height={circleSize}
+            style={{ transform: "rotate(-90deg)" }}
+          >
+            <Path
+              d="
+                M 180 35
+                L 210 150
+                L 240 50
+                Q 240 42, 230 40
+                Z"
+              fill="#4fcf6f"
+            />
+            <Path
+            d={`
+                M 180 ${circleSize-35}
+                L 210 ${circleSize-150}
+                L 240 ${circleSize-50}
+                Q 240 ${circleSize-42}, 230 ${circleSize-40}
+                Z`}
+              fill="#4fcf6f"
+            />
+
+            <Circle
+              stroke="#4fcf6f"
+              fill="lightgrey"
+              cx={circleRadius}
+              cy={circleRadius}
+              r={circleRadius - stroke}
+              strokeWidth={stroke}
+              strokeDasharray={dashCount}
+              strokeDashoffset={dashCount - getProgress() * dashCount}
+              strokeLinecap="round"
+            />
+          </Svg>
+          <View style={{ position: "absolute" }}>
+            <Text style={{ fontSize: 55 }}>{timeToString()}</Text>
+          </View>
         </View>
 
         <View style={styles.session}>
