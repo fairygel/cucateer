@@ -40,6 +40,7 @@ export default function HomeScreen() {
     setRemainingTime(durationMs);
   }, []);
 
+
   useEffect(() => {
     if (!endAt) return;
     const id = setInterval(() => {
@@ -87,7 +88,7 @@ export default function HomeScreen() {
         <Svg
           width={circleSize}
           height={circleSize}
-          style={{ transform: "rotate(-90deg)" }}
+          style={{ transform: [{ rotate: "-90deg" }] }}
         >
           <Path
             d="
