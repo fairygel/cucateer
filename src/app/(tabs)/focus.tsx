@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Pause, Play, RotateCcw } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Text, View, StyleSheet, Pressable } from "react-native";
@@ -5,12 +6,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 
 export default function HomeScreen() {
+  const DURATION_KEY = "@timer_duration";
   const circleRadius = 120;
   const circleSize = circleRadius * 2;
   const stroke = 10;
   const dashCount = 2 * Math.PI * (circleRadius - stroke);
 
-  const [durationMs, setDurationMs] = useState(60 * 1000);
+  const [durationMs, setDurationMs] = useState(0);
   const [remainingTime, setRemainingTime] = useState(0);
   const [endAt, setEndAt] = useState(0);
 
@@ -27,9 +29,13 @@ export default function HomeScreen() {
   };
 
   const onResetHandle = () => {
-    setRemainingTime(durationMs);
-    setEndAt(0);
-    setIsOnPause(true);
+    loadSettings()
+      .then((duration) => {
+        setRemainingTime(duration);
+        setEndAt(0);
+        setIsOnPause(true);
+      })
+      .catch((e) => console.log(e));
   };
 
   const continueText = () => {
@@ -37,9 +43,29 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    setRemainingTime(durationMs);
+    loadSettings()
+      .then(() => setRemainingTime(durationMs))
+      .catch((e) => console.log(e));
   }, []);
 
+  const isOnlyNumbers = (str: string) => /^\d+$/.test(str);
+
+  // TODO: replace with Settings Context(createContext())
+  const loadSettings = async () => {
+    try {
+      const savedDuration = await AsyncStorage.getItem(DURATION_KEY);
+
+      if (savedDuration && isOnlyNumbers(savedDuration)) {
+        let durationAsNumber = Number(savedDuration);
+
+        setDurationMs(durationAsNumber);
+        return durationAsNumber;
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    return 0;
+  };
 
   useEffect(() => {
     if (!endAt) return;
