@@ -228,6 +228,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   settingHeader: {
+    fontFamily: "Andika",
     color: colors.muted,
     fontSize: 14,
   },
@@ -243,6 +244,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8
   },
   label: {
+    fontFamily: "Andika",
     color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
@@ -253,6 +255,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   input: {
+    fontFamily: "Andika",
     backgroundColor: colors.surface,
     width: 64,
     height: 40,

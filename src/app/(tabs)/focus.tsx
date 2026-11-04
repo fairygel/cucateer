@@ -251,7 +251,12 @@ export default function HomeScreen() {
         </Svg>
         <View style={{ position: "absolute" }}>
           <Text
-            style={{ fontSize: 55, fontWeight: "bold", color: colors.text }}
+            style={{
+              fontFamily: "Andika",
+              fontSize: 55,
+              fontWeight: "bold",
+              color: colors.text,
+            }}
           >
             {timeToString()}
           </Text>
@@ -269,7 +274,7 @@ export default function HomeScreen() {
               size={24}
               color={colors.background}
             />
-            <Text style={{ fontSize: 20, color: colors.background }}>
+            <Text style={{ fontFamily: "Andika", fontSize: 20, color: colors.background }}>
               {continueText()}
             </Text>
           </Pressable>
@@ -283,7 +288,7 @@ export default function HomeScreen() {
               size={24}
               color={colors.text}
             />
-            <Text style={{ fontSize: 20, color: colors.text }}>Pause</Text>
+            <Text style={{ fontFamily: "Andika", fontSize: 20, color: colors.text }}>Pause</Text>
           </Pressable>
         )}
         <Pressable style={styles.resetButton} onPress={onResetHandle}>
@@ -316,10 +321,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   typeTextActive: {
+    fontFamily: "Andika",
     color: colors.text,
     fontWeight: "bold",
   },
   typeTextInactive: {
+    fontFamily: "Andika",
     color: colors.muted,
   },
   session: {

@@ -9,6 +9,7 @@ export default function TabLayout() {
       tabBarActiveTintColor: colors.accent, 
       headerShown: false,
       tabBarInactiveTintColor: colors.muted,
+      tabBarLabelStyle: { fontFamily: "Andika" },
       tabBarStyle: {
         backgroundColor: colors.background,
         borderTopColor: colors.background
