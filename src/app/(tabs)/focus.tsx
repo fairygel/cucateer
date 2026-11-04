@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Pause, Play, RotateCcw } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, View, StyleSheet, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
@@ -8,6 +8,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { colors } from "@/constants/colors";
 import { storageKeys } from "@/constants/storageKeys";
 import { TimerType } from "@/constants/TimerType";
+import { useFocusEffect } from "expo-router";
 
 const isOnlyNumbers = (str: string) => /^\d*$/.test(str);
 
@@ -45,6 +46,9 @@ export default function HomeScreen() {
   const [isOnPause, setIsOnPause] = useState(true);
   const [isStarted, setIsStarted] = useState(false);
 
+  const isStartedRef = useRef(isStarted);
+  const isOnPauseRef = useRef(isOnPause);
+
   const getLeftTime = () => {
     return Math.max(0, endAt - Date.now());
   };
@@ -72,33 +76,38 @@ export default function HomeScreen() {
       .catch((e) => console.log(e));
   };
 
-  const onTimerTypeChange = (type: TimerType) => {
-    if (!isOnPause || type === timerType) return;
-
-    setTimerType(type);
-    readDuration(type)
-      .then((duration) => {
-        setDurationMs(duration);
-        setRemainingTime(duration);
-        setEndAt(0);
-        setIsOnPause(true);
-        setIsStarted(false);
-      })
-      .catch((e) => console.log(e));
-  };
-
   const continueText = () => {
     return isStarted ? "Continue" : "Start";
   };
 
-  useEffect(() => {
-    readDuration(TimerType.FOCUS)
-      .then((duration) => {
-        setDurationMs(duration);
-        setRemainingTime(duration);
-      })
-      .catch((e) => console.log(e));
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      isOnPauseRef.current = isOnPause;
+    }, [isOnPause]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      isStartedRef.current = isStarted;
+    }, [isStarted]),
+  );
+
+  // on first open and tab was switched to this
+  useFocusEffect(
+    useCallback(() => {
+      readDuration(timerType)
+        .then((duration) => {
+          if (isOnPauseRef.current) {
+            setRemainingTime(duration);
+            setEndAt(0);
+          }
+          if (!isStartedRef.current) {
+            setDurationMs(duration);
+          }
+        })
+        .catch((e) => console.log(e));
+    }, [timerType]),
+  );
 
   useEffect(() => {
     if (!endAt) return;
@@ -145,7 +154,7 @@ export default function HomeScreen() {
                 ? styles.typeOptionActive
                 : styles.typeOptionInactive
             }
-            onPress={() => onTimerTypeChange(TimerType.FOCUS)}
+            onPress={() => setTimerType(TimerType.FOCUS)}
           >
             <Text
               style={
@@ -163,7 +172,7 @@ export default function HomeScreen() {
                 ? styles.typeOptionActive
                 : styles.typeOptionInactive
             }
-            onPress={() => onTimerTypeChange(TimerType.SHORT)}
+            onPress={() => setTimerType(TimerType.SHORT)}
           >
             <Text
               style={
@@ -181,7 +190,7 @@ export default function HomeScreen() {
                 ? styles.typeOptionActive
                 : styles.typeOptionInactive
             }
-            onPress={() => onTimerTypeChange(TimerType.LONG)}
+            onPress={() => setTimerType(TimerType.LONG)}
           >
             <Text
               style={
@@ -274,7 +283,13 @@ export default function HomeScreen() {
               size={24}
               color={colors.background}
             />
-            <Text style={{ fontFamily: "Andika", fontSize: 20, color: colors.background }}>
+            <Text
+              style={{
+                fontFamily: "Andika",
+                fontSize: 20,
+                color: colors.background,
+              }}
+            >
               {continueText()}
             </Text>
           </Pressable>
@@ -288,7 +303,11 @@ export default function HomeScreen() {
               size={24}
               color={colors.text}
             />
-            <Text style={{ fontFamily: "Andika", fontSize: 20, color: colors.text }}>Pause</Text>
+            <Text
+              style={{ fontFamily: "Andika", fontSize: 20, color: colors.text }}
+            >
+              Pause
+            </Text>
           </Pressable>
         )}
         <Pressable style={styles.resetButton} onPress={onResetHandle}>
