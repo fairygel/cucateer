@@ -11,9 +11,15 @@ import { TimerType } from "@/constants/TimerType";
 
 const isOnlyNumbers = (str: string) => /^\d*$/.test(str);
 
-const readDuration = async () => {
+const durationKeys = {
+  [TimerType.FOCUS]: storageKeys.focusDuration,
+  [TimerType.SHORT]: storageKeys.shortDuration,
+  [TimerType.LONG]: storageKeys.longDuration,
+};
+
+const readDuration = async (timerType: TimerType) => {
   try {
-    const savedDuration = await AsyncStorage.getItem(storageKeys.focusDuration);
+    const savedDuration = await AsyncStorage.getItem(durationKeys[timerType]);
 
     if (savedDuration && isOnlyNumbers(savedDuration)) {
       return Number(savedDuration);
@@ -37,6 +43,7 @@ export default function HomeScreen() {
   const [endAt, setEndAt] = useState(0);
 
   const [isOnPause, setIsOnPause] = useState(true);
+  const [isStarted, setIsStarted] = useState(false);
 
   const getLeftTime = () => {
     return Math.max(0, endAt - Date.now());
@@ -48,27 +55,44 @@ export default function HomeScreen() {
       setEndAt(0);
     } else {
       setEndAt(Date.now() + remainingTime);
+      setIsStarted(true);
     }
     setIsOnPause(onPause);
   };
 
   const onResetHandle = () => {
-    readDuration()
+    readDuration(timerType)
       .then((duration) => {
         setDurationMs(duration);
         setRemainingTime(duration);
         setEndAt(0);
         setIsOnPause(true);
+        setIsStarted(false);
+      })
+      .catch((e) => console.log(e));
+  };
+
+  const onTimerTypeChange = (type: TimerType) => {
+    if (!isOnPause || type === timerType) return;
+
+    setTimerType(type);
+    readDuration(type)
+      .then((duration) => {
+        setDurationMs(duration);
+        setRemainingTime(duration);
+        setEndAt(0);
+        setIsOnPause(true);
+        setIsStarted(false);
       })
       .catch((e) => console.log(e));
   };
 
   const continueText = () => {
-    return durationMs === remainingTime ? "Start" : "Continue";
+    return isStarted ? "Continue" : "Start";
   };
 
   useEffect(() => {
-    readDuration()
+    readDuration(TimerType.FOCUS)
       .then((duration) => {
         setDurationMs(duration);
         setRemainingTime(duration);
@@ -113,62 +137,64 @@ export default function HomeScreen() {
       }}
       edges={["top", "bottom"]}
     >
-      <View style={styles.typeContainer}>
-        <Pressable
-          style={
-            timerType === TimerType.FOCUS
-              ? styles.typeOptionActive
-              : styles.typeOptionInactive
-          }
-          onPress={() => setTimerType(TimerType.FOCUS)}
-        >
-          <Text
+      {!isStarted && (
+        <View style={styles.typeContainer}>
+          <Pressable
             style={
               timerType === TimerType.FOCUS
-                ? styles.typeTextActive
-                : styles.typeTextInactive
+                ? styles.typeOptionActive
+                : styles.typeOptionInactive
             }
+            onPress={() => onTimerTypeChange(TimerType.FOCUS)}
           >
-            Focus
-          </Text>
-        </Pressable>
-        <Pressable
-          style={
-            timerType === TimerType.SHORT
-              ? styles.typeOptionActive
-              : styles.typeOptionInactive
-          }
-          onPress={() => setTimerType(TimerType.SHORT)}
-        >
-          <Text
+            <Text
+              style={
+                timerType === TimerType.FOCUS
+                  ? styles.typeTextActive
+                  : styles.typeTextInactive
+              }
+            >
+              Focus
+            </Text>
+          </Pressable>
+          <Pressable
             style={
               timerType === TimerType.SHORT
-                ? styles.typeTextActive
-                : styles.typeTextInactive
+                ? styles.typeOptionActive
+                : styles.typeOptionInactive
             }
+            onPress={() => onTimerTypeChange(TimerType.SHORT)}
           >
-            Short Break
-          </Text>
-        </Pressable>
-        <Pressable
-          style={
-            timerType === TimerType.LONG
-              ? styles.typeOptionActive
-              : styles.typeOptionInactive
-          }
-          onPress={() => setTimerType(TimerType.LONG)}
-        >
-          <Text
+            <Text
+              style={
+                timerType === TimerType.SHORT
+                  ? styles.typeTextActive
+                  : styles.typeTextInactive
+              }
+            >
+              Short Break
+            </Text>
+          </Pressable>
+          <Pressable
             style={
               timerType === TimerType.LONG
-                ? styles.typeTextActive
-                : styles.typeTextInactive
+                ? styles.typeOptionActive
+                : styles.typeOptionInactive
             }
+            onPress={() => onTimerTypeChange(TimerType.LONG)}
           >
-            Long Break
-          </Text>
-        </Pressable>
-      </View>
+            <Text
+              style={
+                timerType === TimerType.LONG
+                  ? styles.typeTextActive
+                  : styles.typeTextInactive
+              }
+            >
+              Long Break
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={{ alignItems: "center", justifyContent: "center" }}>
         <Svg
@@ -236,7 +262,7 @@ export default function HomeScreen() {
         {isOnPause ? (
           <Pressable
             style={styles.continueButton}
-            onPress={() => setOnPause(!isOnPause)}
+            onPress={() => setOnPause(false)}
           >
             <Play
               style={{ position: "absolute", left: 16 }}
@@ -250,7 +276,7 @@ export default function HomeScreen() {
         ) : (
           <Pressable
             style={styles.pauseButton}
-            onPress={() => setOnPause(!isOnPause)}
+            onPress={() => setOnPause(true)}
           >
             <Pause
               style={{ position: "absolute", left: 16 }}
