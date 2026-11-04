@@ -38,17 +38,11 @@
     "eslint-config-expo": "~58.0.4",
     "typescript": "~6.0.3"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "dtrace-provider",
-      "protobufjs"
-    ]
-  },
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "build:android": "bash ./scripts/android-docker.sh",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint"
   },
