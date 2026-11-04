@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { PawPrint, Settings } from "lucide-react-native";
+import { Cat, PawPrint, Settings } from "lucide-react-native";
 
 import { colors } from "@/constants/colors";
 
@@ -20,7 +20,7 @@ export default function TabLayout() {
         options={{
           title: "focus",
           tabBarIcon: ({ color, size }) => (
-            <PawPrint color={color} size={size} />
+            <Cat color={color} size={size} />
           ),
         }}
       />

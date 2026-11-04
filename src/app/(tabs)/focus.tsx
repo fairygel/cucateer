@@ -9,6 +9,8 @@ import { colors } from "@/constants/colors";
 import { storageKeys } from "@/constants/storageKeys";
 import { TimerType } from "@/constants/TimerType";
 import { useFocusEffect } from "expo-router";
+import PawPrint from "lucide-react-native/icons/paw-print";
+import { rotate } from "@expo/ui/jetpack-compose/modifiers";
 
 const isOnlyNumbers = (str: string) => /^\d*$/.test(str);
 
@@ -48,6 +50,13 @@ export default function HomeScreen() {
 
   const isStartedRef = useRef(isStarted);
   const isOnPauseRef = useRef(isOnPause);
+
+  const streak = [
+    { id: "1", complete: true },
+    { id: "2", complete: true },
+    { id: "3", complete: false },
+    { id: "4", complete: false },
+  ];
 
   const getLeftTime = () => {
     return Math.max(0, endAt - Date.now());
@@ -272,6 +281,17 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      <View style={styles.streakContainer}>
+        {streak.map((item) => (
+          <View key={item.id} style={{ transform: [{ rotate: "-45deg" }] }}>
+            <PawPrint
+              size={28}
+              color={ item.complete? colors.accent : colors.muted }
+            ></PawPrint>
+          </View>
+        ))}
+      </View>
+
       <View style={styles.session}>
         {isOnPause ? (
           <Pressable
@@ -352,7 +372,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 48,
+    marginTop: 24,
     flexDirection: "row",
   },
   continueButton: {
@@ -381,5 +401,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.surface,
     marginLeft: 12,
+  },
+  streakContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 24,
   },
 });
