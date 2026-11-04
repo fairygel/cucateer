@@ -1,15 +1,17 @@
 import { Tabs } from "expo-router";
 import { PawPrint, Settings } from "lucide-react-native";
 
+import { colors } from "@/constants/colors";
+
 export default function TabLayout() {
   return (
     <Tabs screenOptions={{ 
-      tabBarActiveTintColor: "#4fcf6f", 
+      tabBarActiveTintColor: colors.accent, 
       headerShown: false,
-      tabBarInactiveTintColor: '#888888',
+      tabBarInactiveTintColor: colors.muted,
       tabBarStyle: {
-        backgroundColor: 'black',
-        borderTopColor: 'black'
+        backgroundColor: colors.background,
+        borderTopColor: colors.background
       }
     }}>
       <Tabs.Screen

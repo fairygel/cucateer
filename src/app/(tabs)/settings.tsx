@@ -3,40 +3,27 @@ import { View, StyleSheet, Text, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function Settings() {
-  const DURATION_KEY = "@timer_duration";
+import { colors } from "@/constants/colors";
+import { storageKeys } from "@/constants/storageKeys";
 
+const isOnlyNumbers = (str: string) => /^\d*$/.test(str);
+
+const readDuration = async () => {
+  try {
+    const savedDuration = await AsyncStorage.getItem(storageKeys.focusDuration);
+
+    if (savedDuration && isOnlyNumbers(savedDuration)) {
+      return Number(savedDuration);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  return null;
+};
+
+export default function Settings() {
   const [minutes, setMinutes] = useState("");
   const [seconds, setSeconds] = useState("");
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  useEffect(() => {
-    saveSettings();
-  }, [seconds, minutes]);
-
-  const loadSettings = async () => {
-    try {
-      const savedDuration = await AsyncStorage.getItem(DURATION_KEY);
-      if (savedDuration && isOnlyNumbers(savedDuration)) {
-        let durationAsNumber = Number(savedDuration);
-
-        const totalSeconds = Math.ceil(durationAsNumber / 1000);
-
-        const mm = Math.floor(totalSeconds / 60)
-          .toString()
-          .padStart(2, "0");
-        const ss = (totalSeconds % 60).toString().padStart(2, "0");
-
-        setMinutes(mm);
-        setSeconds(ss);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
 
   const saveSettings = async () => {
     try {
@@ -52,13 +39,33 @@ export default function Settings() {
 
       const time = (finalTime * 1000).toString();
       
-      await AsyncStorage.setItem(DURATION_KEY, time)
+      await AsyncStorage.setItem(storageKeys.focusDuration, time)
     } catch(e) {
       console.log(e);
     }
   }
-  
-  const isOnlyNumbers = (str: string) => /^\d+$/.test(str);
+
+  useEffect(() => {
+    readDuration()
+      .then((durationMs) => {
+        if (durationMs === null) return;
+
+        const totalSeconds = Math.ceil(durationMs / 1000);
+
+        const mm = Math.floor(totalSeconds / 60)
+          .toString()
+          .padStart(2, "0");
+        const ss = (totalSeconds % 60).toString().padStart(2, "0");
+
+        setMinutes(mm);
+        setSeconds(ss);
+      })
+      .catch((e) => console.log(e));
+  }, []);
+
+  useEffect(() => {
+    saveSettings();
+  }, [seconds, minutes]);
 
   const onMinutesChange = (minutes: string) => {
     if (isOnlyNumbers(minutes) && minutes.length <= 4) {
@@ -82,7 +89,7 @@ export default function Settings() {
             value={minutes}
             onChangeText={onMinutesChange}
             placeholder="Min"
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={colors.muted}
             keyboardType="number-pad"
             textAlign="center"
             underlineColorAndroid="transparent"
@@ -93,7 +100,7 @@ export default function Settings() {
             value={seconds}
             onChangeText={onSecondsChange}
             placeholder="Sec"
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={colors.muted}
             keyboardType="number-pad"
             textAlign="center"
             underlineColorAndroid="transparent"
@@ -106,12 +113,12 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: "black",
+    backgroundColor: colors.background,
     flex: 1,
     padding: 16,
   },
   settingBlock: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: colors.subtle,
     borderRadius: 16,
     padding: 16,
     flexDirection: "row",
@@ -119,7 +126,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   label: {
-    color: "white",
+    color: colors.text,
     fontSize: 18,
     fontWeight: "500",
   },
@@ -129,12 +136,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   input: {
-    backgroundColor: "#2C2C2E",
+    backgroundColor: colors.surface,
     width: 64,
     height: 40,
     borderRadius: 12,
     paddingHorizontal: 12,
-    color: "white",
+    color: colors.text,
     fontSize: 16,
     outlineStyle: "none" as any,
   },

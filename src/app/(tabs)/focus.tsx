@@ -5,18 +5,42 @@ import { Text, View, StyleSheet, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 
+import { colors } from "@/constants/colors";
+import { storageKeys } from "@/constants/storageKeys";
+import { TimerType } from "@/constants/TimerType";
+
+const isOnlyNumbers = (str: string) => /^\d*$/.test(str);
+
+const readDuration = async () => {
+  try {
+    const savedDuration = await AsyncStorage.getItem(storageKeys.focusDuration);
+
+    if (savedDuration && isOnlyNumbers(savedDuration)) {
+      return Number(savedDuration);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  return 0;
+};
+
+const circleRadius = 120;
+const circleSize = circleRadius * 2;
+const stroke = 10;
+const dashCount = 2 * Math.PI * (circleRadius - stroke);
+
 export default function HomeScreen() {
-  const DURATION_KEY = "@timer_duration";
-  const circleRadius = 120;
-  const circleSize = circleRadius * 2;
-  const stroke = 10;
-  const dashCount = 2 * Math.PI * (circleRadius - stroke);
+  const [timerType, setTimerType] = useState(TimerType.FOCUS);
 
   const [durationMs, setDurationMs] = useState(0);
   const [remainingTime, setRemainingTime] = useState(0);
   const [endAt, setEndAt] = useState(0);
 
   const [isOnPause, setIsOnPause] = useState(true);
+
+  const getLeftTime = () => {
+    return Math.max(0, endAt - Date.now());
+  };
 
   const setOnPause = (onPause: boolean) => {
     if (onPause) {
@@ -29,8 +53,9 @@ export default function HomeScreen() {
   };
 
   const onResetHandle = () => {
-    loadSettings()
+    readDuration()
       .then((duration) => {
+        setDurationMs(duration);
         setRemainingTime(duration);
         setEndAt(0);
         setIsOnPause(true);
@@ -43,29 +68,13 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    loadSettings()
-      .then(() => setRemainingTime(durationMs))
+    readDuration()
+      .then((duration) => {
+        setDurationMs(duration);
+        setRemainingTime(duration);
+      })
       .catch((e) => console.log(e));
   }, []);
-
-  const isOnlyNumbers = (str: string) => /^\d+$/.test(str);
-
-  // TODO: replace with Settings Context(createContext())
-  const loadSettings = async () => {
-    try {
-      const savedDuration = await AsyncStorage.getItem(DURATION_KEY);
-
-      if (savedDuration && isOnlyNumbers(savedDuration)) {
-        let durationAsNumber = Number(savedDuration);
-
-        setDurationMs(durationAsNumber);
-        return durationAsNumber;
-      }
-    } catch (e) {
-      console.log(e);
-    }
-    return 0;
-  };
 
   useEffect(() => {
     if (!endAt) return;
@@ -79,12 +88,8 @@ export default function HomeScreen() {
     return () => clearInterval(id);
   }, [endAt]);
 
-  const getLeftTime = () => {
-    return Math.max(0, endAt - Date.now());
-  };
-
   const getProgress = () => {
-    return (durationMs - remainingTime) / durationMs;
+    return (durationMs - remainingTime) / durationMs || 0;
   };
 
   const timeToString = () => {
@@ -104,11 +109,66 @@ export default function HomeScreen() {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#000000",
+        backgroundColor: colors.background,
       }}
       edges={["top", "bottom"]}
     >
-      <View style={styles.header}></View>
+      <View style={styles.typeContainer}>
+        <Pressable
+          style={
+            timerType === TimerType.FOCUS
+              ? styles.typeOptionActive
+              : styles.typeOptionInactive
+          }
+          onPress={() => setTimerType(TimerType.FOCUS)}
+        >
+          <Text
+            style={
+              timerType === TimerType.FOCUS
+                ? styles.typeTextActive
+                : styles.typeTextInactive
+            }
+          >
+            Focus
+          </Text>
+        </Pressable>
+        <Pressable
+          style={
+            timerType === TimerType.SHORT
+              ? styles.typeOptionActive
+              : styles.typeOptionInactive
+          }
+          onPress={() => setTimerType(TimerType.SHORT)}
+        >
+          <Text
+            style={
+              timerType === TimerType.SHORT
+                ? styles.typeTextActive
+                : styles.typeTextInactive
+            }
+          >
+            Short Break
+          </Text>
+        </Pressable>
+        <Pressable
+          style={
+            timerType === TimerType.LONG
+              ? styles.typeOptionActive
+              : styles.typeOptionInactive
+          }
+          onPress={() => setTimerType(TimerType.LONG)}
+        >
+          <Text
+            style={
+              timerType === TimerType.LONG
+                ? styles.typeTextActive
+                : styles.typeTextInactive
+            }
+          >
+            Long Break
+          </Text>
+        </Pressable>
+      </View>
 
       <View style={{ alignItems: "center", justifyContent: "center" }}>
         <Svg
@@ -123,7 +183,7 @@ export default function HomeScreen() {
                 L 240 50
                 Q 240 42, 230 40
                 Z"
-            fill="#4fcf6f"
+            fill={colors.accent}
           />
           <Path
             d={`
@@ -132,12 +192,28 @@ export default function HomeScreen() {
                 L 240 ${circleSize - 50}
                 Q 240 ${circleSize - 42}, 230 ${circleSize - 40}
                 Z`}
-            fill="#4fcf6f"
+            fill={colors.accent}
           />
 
           <Circle
-            stroke="#4fcf6f"
-            fill="#1C1C1E"
+            fill={colors.background}
+            cx={circleRadius}
+            cy={circleRadius}
+            r={circleRadius - stroke / 1.9}
+          />
+
+          <Circle
+            stroke={`${colors.accent}55`}
+            fill="none"
+            cx={circleRadius}
+            cy={circleRadius}
+            r={circleRadius - stroke}
+            strokeWidth={stroke}
+          />
+
+          <Circle
+            stroke={colors.accent}
+            fill="none"
             cx={circleRadius}
             cy={circleRadius}
             r={circleRadius - stroke}
@@ -148,7 +224,9 @@ export default function HomeScreen() {
           />
         </Svg>
         <View style={{ position: "absolute" }}>
-          <Text style={{ fontSize: 55, color: "#FFFFFF" }}>
+          <Text
+            style={{ fontSize: 55, fontWeight: "bold", color: colors.text }}
+          >
             {timeToString()}
           </Text>
         </View>
@@ -163,9 +241,11 @@ export default function HomeScreen() {
             <Play
               style={{ position: "absolute", left: 16 }}
               size={24}
-              color="#000000"
+              color={colors.background}
             />
-            <Text style={{ fontSize: 20 }}>{continueText()}</Text>
+            <Text style={{ fontSize: 20, color: colors.background }}>
+              {continueText()}
+            </Text>
           </Pressable>
         ) : (
           <Pressable
@@ -175,13 +255,13 @@ export default function HomeScreen() {
             <Pause
               style={{ position: "absolute", left: 16 }}
               size={24}
-              color="#FFFFFF"
+              color={colors.text}
             />
-            <Text style={{ fontSize: 20, color: "#FFFFFF" }}>Pause</Text>
+            <Text style={{ fontSize: 20, color: colors.text }}>Pause</Text>
           </Pressable>
         )}
         <Pressable style={styles.resetButton} onPress={onResetHandle}>
-          <RotateCcw color="#FFFFFF" />
+          <RotateCcw color={colors.text} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -189,14 +269,32 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {},
-  clock: {
+  typeContainer: {
+    backgroundColor: colors.subtle,
+    borderRadius: 48,
+    flexDirection: "row",
+    padding: 6,
+    width: "75%",
+    marginBottom: 48,
+  },
+  typeOptionActive: {
+    padding: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 48,
+    width: "33.33%",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#000000",
-    width: 240,
-    height: 240,
-    borderRadius: "50%",
+  },
+  typeOptionInactive: {
+    padding: 12,
+    width: "33.33%",
+    alignItems: "center",
+  },
+  typeTextActive: {
+    color: colors.text,
+    fontWeight: "bold",
+  },
+  typeTextInactive: {
+    color: colors.muted,
   },
   session: {
     width: "100%",
@@ -208,7 +306,7 @@ const styles = StyleSheet.create({
   continueButton: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#4fcf6f",
+    backgroundColor: colors.accent,
     width: "55%",
     padding: 18,
     borderRadius: 48,
@@ -217,7 +315,7 @@ const styles = StyleSheet.create({
   pauseButton: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1C1C1E",
+    backgroundColor: colors.subtle,
     width: "55%",
     padding: 18,
     borderRadius: 48,
@@ -229,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 48,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1C1C1E",
+    backgroundColor: colors.surface,
     marginLeft: 12,
   },
 });
