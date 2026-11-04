@@ -22,7 +22,7 @@
       "package": "me.fairygel.cucateer"
     },
     "web": {
-      "output": "server",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -41,11 +41,6 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
       "eas": {
         "projectId": "768789a2-145d-4fbf-9914-75ef5afd4e42"
       }
