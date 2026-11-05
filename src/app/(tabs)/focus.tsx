@@ -19,17 +19,25 @@ const durationKeys = {
   [TimerType.LONG]: storageKeys.longDuration,
 };
 
+const getDefaultTimer = (timerType: TimerType) => {
+  switch (timerType) {
+    case TimerType.FOCUS: return 1000 * 60 * 25;
+    case TimerType.SHORT: return 1000 * 60 * 5;
+    case TimerType.LONG: return 1000 * 60 * 15;
+  }
+}
+
 const readDuration = async (timerType: TimerType) => {
   try {
     const savedDuration = await AsyncStorage.getItem(durationKeys[timerType]);
-
-    if (savedDuration && isOnlyNumbers(savedDuration)) {
+    
+    if (savedDuration && savedDuration !== '0' && isOnlyNumbers(savedDuration)) {
       return Number(savedDuration);
     }
   } catch (e) {
     console.log(e);
   }
-  return 0;
+  return getDefaultTimer(timerType);
 };
 
 const circleRadius = 120;
@@ -204,7 +212,7 @@ export default function HomeScreen() {
 
       readDuration(timerType)
         .then((duration) => {
-          if (isOnPauseRef.current) {
+          if (isOnPauseRef.current && !isStartedRef.current) {
             setRemainingTime(duration);
             setEndAt(0);
           }
