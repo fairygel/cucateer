@@ -57,6 +57,36 @@ export default function HomeScreen() {
     { id: "4", complete: false },
   ]);
 
+  const isStreakLoadedRef = useRef(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(storageKeys.streak)
+      .then((savedStreak) => {
+        const count =
+          savedStreak && isOnlyNumbers(savedStreak) ? Number(savedStreak) : 0;
+
+        setStreak((prevStreak) => {
+          return prevStreak.map((item, index) => {
+            return { ...item, complete: index < count };
+          });
+        });
+      })
+      .catch((e) => console.log(e))
+      .finally(() => {
+        isStreakLoadedRef.current = true;
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!isStreakLoadedRef.current) return;
+
+    const count = streak.filter((item) => item.complete).length;
+
+    AsyncStorage.setItem(storageKeys.streak, String(count)).catch((e) =>
+      console.log(e),
+    );
+  }, [streak]);
+
   const getLeftTime = () => {
     return Math.max(0, endAt - Date.now());
   };
@@ -192,6 +222,11 @@ export default function HomeScreen() {
     return `${mm}:${ss}`;
   };
 
+  const getPawRotation = () => {
+    const randomDeg = Math.floor(Math.random() * (51)) + 20;
+    return `-${randomDeg}deg`
+  };
+  
   return (
     <SafeAreaView
       style={{
@@ -331,7 +366,7 @@ export default function HomeScreen() {
       {timerType === TimerType.FOCUS && (
         <View style={styles.streakContainer}>
           {streak.map((item) => (
-            <View key={item.id} style={{ transform: [{ rotate: "-45deg" }] }}>
+            <View key={item.id} style={{ transform: [{ rotate: getPawRotation() }] }}>
               <PawPrint
                 size={28}
                 color={item.complete ? colors.accent : colors.muted}
