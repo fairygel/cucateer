@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Pause, Play, RotateCcw } from "lucide-react-native";
+import { Pause, Play, RotateCcw, SkipForward } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, View, StyleSheet, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -46,6 +46,7 @@ export default function HomeScreen() {
 
   const [isOnPause, setIsOnPause] = useState(true);
   const [isStarted, setIsStarted] = useState(false);
+  const [isAfterFocus, setIsAfterFocus] = useState(false);
 
   const isStartedRef = useRef(isStarted);
   const isOnPauseRef = useRef(isOnPause);
@@ -124,23 +125,46 @@ export default function HomeScreen() {
       .catch((e) => console.log(e));
   };
 
+  const onSkipHandle = () => {
+    setIsAfterFocus(false);
+    setTimerType(TimerType.FOCUS);
+    onResetHandle();
+  };
+
   const continueText = () => {
-    return isStarted ? "Continue" : "Start";
+    return isStarted ? "Continue" : timerType === TimerType.FOCUS? "Start" : "Rest";
   };
 
   const onCompleted = () => {
     if (timerType === TimerType.FOCUS) {
+      setIsAfterFocus(true);
+
+      let hasFalse = true;
+
       setStreak((prevStreak) => {
         let found = false;
 
-        return prevStreak.map((item) => {
+        const updatedStreak = prevStreak.map((item) => {
           if (!item.complete && !found) {
             found = true;
             return { ...item, complete: true };
           }
           return item;
         });
+
+        hasFalse = updatedStreak.some((item) => !item.complete);
+
+        if (hasFalse) {
+          setTimerType(TimerType.SHORT);
+        } else {
+          setTimerType(TimerType.LONG);
+        }
+
+        return updatedStreak;
       });
+    } else if (isAfterFocus) {
+      setIsAfterFocus(false);
+      setTimerType(TimerType.FOCUS);
     }
 
     onResetHandle();
@@ -223,10 +247,18 @@ export default function HomeScreen() {
   };
 
   const getPawRotation = () => {
-    const randomDeg = Math.floor(Math.random() * (51)) + 20;
-    return `-${randomDeg}deg`
+    const randomDeg = Math.floor(Math.random() * 51) + 20;
+    return `-${randomDeg}deg`;
   };
-  
+
+  const getTimerHeader = () => {
+    switch (timerType) {
+      case TimerType.FOCUS: return 'FOCUS SESSION';
+      case TimerType.SHORT: return 'SHORT BREAK';
+      case TimerType.LONG: return 'LONG BREAK';
+    }
+  };
+
   return (
     <SafeAreaView
       style={{
@@ -237,7 +269,7 @@ export default function HomeScreen() {
       }}
       edges={["top", "bottom"]}
     >
-      {!isStarted && (
+      {!isStarted && !isAfterFocus && (
         <View style={styles.typeContainer}>
           <Pressable
             style={
@@ -349,7 +381,18 @@ export default function HomeScreen() {
             strokeLinecap="round"
           />
         </Svg>
-        <View style={{ position: "absolute" }}>
+        <View style={{ position: "absolute", alignItems: "center" }}>
+          <Text
+            style={{
+              fontFamily: "Andika",
+              color: colors.muted,
+              fontWeight: "bold",
+              fontSize: 12,
+              letterSpacing: 2,
+            }}
+          >
+            {getTimerHeader()}
+          </Text>
           <Text
             style={{
               fontFamily: "Andika",
@@ -360,19 +403,36 @@ export default function HomeScreen() {
           >
             {timeToString()}
           </Text>
+          <Text
+            style={{
+              fontFamily: "Andika",
+              color: colors.muted,
+              fontSize: 12,
+            }}
+          >
+            of {Math.floor(durationMs / 10 / 60) / 100} minutes
+          </Text>
         </View>
       </View>
 
       {timerType === TimerType.FOCUS && (
+        <View style={{alignItems: 'center', marginTop: 24}}>
         <View style={styles.streakContainer}>
           {streak.map((item) => (
-            <View key={item.id} style={{ transform: [{ rotate: getPawRotation() }] }}>
+            <View
+              key={item.id}
+              style={{ transform: [{ rotate: getPawRotation() }] }}
+            >
               <PawPrint
                 size={28}
                 color={item.complete ? colors.accent : colors.muted}
               ></PawPrint>
             </View>
           ))}
+        </View>
+          <Text style={{color: colors.muted, fontFamily: 'Andika', marginTop: 6}}>
+            Soft paws, steady progress.
+          </Text>
         </View>
       )}
 
@@ -414,9 +474,15 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         )}
-        <Pressable style={styles.resetButton} onPress={onResetHandle}>
-          <RotateCcw color={colors.text} />
-        </Pressable>
+        {isAfterFocus ? (
+          <Pressable style={styles.resetButton} onPress={onSkipHandle}>
+            <SkipForward color={colors.text} />
+          </Pressable>
+        ) : (
+          <Pressable style={styles.resetButton} onPress={onResetHandle}>
+            <RotateCcw color={colors.text} />
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -489,6 +555,5 @@ const styles = StyleSheet.create({
   streakContainer: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 24,
   },
 });
