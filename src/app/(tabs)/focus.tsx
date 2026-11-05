@@ -10,7 +10,6 @@ import { storageKeys } from "@/constants/storageKeys";
 import { TimerType } from "@/constants/TimerType";
 import { useFocusEffect } from "expo-router";
 import PawPrint from "lucide-react-native/icons/paw-print";
-import { rotate } from "@expo/ui/jetpack-compose/modifiers";
 
 const isOnlyNumbers = (str: string) => /^\d*$/.test(str);
 
@@ -132,6 +131,23 @@ export default function HomeScreen() {
   // on first open and tab was switched to this
   useFocusEffect(
     useCallback(() => {
+      AsyncStorage.getItem(storageKeys.streakDay)
+        .then((savedDay) => {
+          const today = new Date().toDateString();
+
+          if (savedDay !== today) {
+            setStreak((prevStreak) => {
+              return prevStreak.map((item) => {
+                return { ...item, complete: false };
+              });
+            });
+            AsyncStorage.setItem(storageKeys.streakDay, today).catch((e) =>
+              console.log(e),
+            );
+          }
+        })
+        .catch((e) => console.log(e));
+
       readDuration(timerType)
         .then((duration) => {
           if (isOnPauseRef.current) {
