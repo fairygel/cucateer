@@ -51,12 +51,12 @@ export default function HomeScreen() {
   const isStartedRef = useRef(isStarted);
   const isOnPauseRef = useRef(isOnPause);
 
-  const streak = [
-    { id: "1", complete: true },
-    { id: "2", complete: true },
+  const [streak, setStreak] = useState([
+    { id: "1", complete: false },
+    { id: "2", complete: false },
     { id: "3", complete: false },
     { id: "4", complete: false },
-  ];
+  ]);
 
   const getLeftTime = () => {
     return Math.max(0, endAt - Date.now());
@@ -69,6 +69,16 @@ export default function HomeScreen() {
     } else {
       setEndAt(Date.now() + remainingTime);
       setIsStarted(true);
+
+      const hasFalse = streak.some((item) => !item.complete);
+
+      if (!hasFalse) {
+        setStreak((prevStreak) => {
+          return prevStreak.map((item) => {
+            return { ...item, complete: false };
+          });
+        });
+      }
     }
     setIsOnPause(onPause);
   };
@@ -87,6 +97,22 @@ export default function HomeScreen() {
 
   const continueText = () => {
     return isStarted ? "Continue" : "Start";
+  };
+
+  const onCompleted = () => {
+    setStreak((prevStreak) => {
+      let found = false;
+
+      return prevStreak.map((item) => {
+        if (!item.complete && !found) {
+          found = true;
+          return { ...item, complete: true };
+        }
+        return item;
+      });
+    });
+
+    onResetHandle();
   };
 
   useFocusEffect(
@@ -125,7 +151,10 @@ export default function HomeScreen() {
 
       setRemainingTime(left);
 
-      if (left === 0) clearInterval(id);
+      if (left === 0) {
+        clearInterval(id);
+        onCompleted();
+      }
     }, 250);
     return () => clearInterval(id);
   }, [endAt]);
@@ -281,16 +310,18 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.streakContainer}>
-        {streak.map((item) => (
-          <View key={item.id} style={{ transform: [{ rotate: "-45deg" }] }}>
-            <PawPrint
-              size={28}
-              color={ item.complete? colors.accent : colors.muted }
-            ></PawPrint>
-          </View>
-        ))}
-      </View>
+      {timerType === TimerType.FOCUS && (
+        <View style={styles.streakContainer}>
+          {streak.map((item) => (
+            <View key={item.id} style={{ transform: [{ rotate: "-45deg" }] }}>
+              <PawPrint
+                size={28}
+                color={item.complete ? colors.accent : colors.muted}
+              ></PawPrint>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={styles.session}>
         {isOnPause ? (
