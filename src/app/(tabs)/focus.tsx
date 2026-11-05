@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Pause, Play, RotateCcw } from "lucide-react-native";
+import { Pause, Play, RotateCcw, SkipForward } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, View, StyleSheet, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import { colors } from "@/constants/colors";
 import { storageKeys } from "@/constants/storageKeys";
 import { TimerType } from "@/constants/TimerType";
 import { useFocusEffect } from "expo-router";
+import PawPrint from "lucide-react-native/icons/paw-print";
 
 const isOnlyNumbers = (str: string) => /^\d*$/.test(str);
 
@@ -18,17 +19,25 @@ const durationKeys = {
   [TimerType.LONG]: storageKeys.longDuration,
 };
 
+const getDefaultTimer = (timerType: TimerType) => {
+  switch (timerType) {
+    case TimerType.FOCUS: return 1000 * 60 * 25;
+    case TimerType.SHORT: return 1000 * 60 * 5;
+    case TimerType.LONG: return 1000 * 60 * 15;
+  }
+}
+
 const readDuration = async (timerType: TimerType) => {
   try {
     const savedDuration = await AsyncStorage.getItem(durationKeys[timerType]);
-
-    if (savedDuration && isOnlyNumbers(savedDuration)) {
+    
+    if (savedDuration && savedDuration !== '0' && isOnlyNumbers(savedDuration)) {
       return Number(savedDuration);
     }
   } catch (e) {
     console.log(e);
   }
-  return 0;
+  return getDefaultTimer(timerType);
 };
 
 const circleRadius = 120;
@@ -45,9 +54,47 @@ export default function HomeScreen() {
 
   const [isOnPause, setIsOnPause] = useState(true);
   const [isStarted, setIsStarted] = useState(false);
+  const [isAfterFocus, setIsAfterFocus] = useState(false);
 
   const isStartedRef = useRef(isStarted);
   const isOnPauseRef = useRef(isOnPause);
+
+  const [streak, setStreak] = useState([
+    { id: "1", complete: false },
+    { id: "2", complete: false },
+    { id: "3", complete: false },
+    { id: "4", complete: false },
+  ]);
+
+  const isStreakLoadedRef = useRef(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(storageKeys.streak)
+      .then((savedStreak) => {
+        const count =
+          savedStreak && isOnlyNumbers(savedStreak) ? Number(savedStreak) : 0;
+
+        setStreak((prevStreak) => {
+          return prevStreak.map((item, index) => {
+            return { ...item, complete: index < count };
+          });
+        });
+      })
+      .catch((e) => console.log(e))
+      .finally(() => {
+        isStreakLoadedRef.current = true;
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!isStreakLoadedRef.current) return;
+
+    const count = streak.filter((item) => item.complete).length;
+
+    AsyncStorage.setItem(storageKeys.streak, String(count)).catch((e) =>
+      console.log(e),
+    );
+  }, [streak]);
 
   const getLeftTime = () => {
     return Math.max(0, endAt - Date.now());
@@ -60,6 +107,16 @@ export default function HomeScreen() {
     } else {
       setEndAt(Date.now() + remainingTime);
       setIsStarted(true);
+
+      const hasFalse = streak.some((item) => !item.complete);
+
+      if (!hasFalse) {
+        setStreak((prevStreak) => {
+          return prevStreak.map((item) => {
+            return { ...item, complete: false };
+          });
+        });
+      }
     }
     setIsOnPause(onPause);
   };
@@ -76,8 +133,49 @@ export default function HomeScreen() {
       .catch((e) => console.log(e));
   };
 
+  const onSkipHandle = () => {
+    setIsAfterFocus(false);
+    setTimerType(TimerType.FOCUS);
+    onResetHandle();
+  };
+
   const continueText = () => {
-    return isStarted ? "Continue" : "Start";
+    return isStarted ? "Continue" : timerType === TimerType.FOCUS? "Start" : "Rest";
+  };
+
+  const onCompleted = () => {
+    if (timerType === TimerType.FOCUS) {
+      setIsAfterFocus(true);
+
+      let hasFalse = true;
+
+      setStreak((prevStreak) => {
+        let found = false;
+
+        const updatedStreak = prevStreak.map((item) => {
+          if (!item.complete && !found) {
+            found = true;
+            return { ...item, complete: true };
+          }
+          return item;
+        });
+
+        hasFalse = updatedStreak.some((item) => !item.complete);
+
+        if (hasFalse) {
+          setTimerType(TimerType.SHORT);
+        } else {
+          setTimerType(TimerType.LONG);
+        }
+
+        return updatedStreak;
+      });
+    } else if (isAfterFocus) {
+      setIsAfterFocus(false);
+      setTimerType(TimerType.FOCUS);
+    }
+
+    onResetHandle();
   };
 
   useFocusEffect(
@@ -95,9 +193,26 @@ export default function HomeScreen() {
   // on first open and tab was switched to this
   useFocusEffect(
     useCallback(() => {
+      AsyncStorage.getItem(storageKeys.streakDay)
+        .then((savedDay) => {
+          const today = new Date().toDateString();
+
+          if (savedDay !== today) {
+            setStreak((prevStreak) => {
+              return prevStreak.map((item) => {
+                return { ...item, complete: false };
+              });
+            });
+            AsyncStorage.setItem(storageKeys.streakDay, today).catch((e) =>
+              console.log(e),
+            );
+          }
+        })
+        .catch((e) => console.log(e));
+
       readDuration(timerType)
         .then((duration) => {
-          if (isOnPauseRef.current) {
+          if (isOnPauseRef.current && !isStartedRef.current) {
             setRemainingTime(duration);
             setEndAt(0);
           }
@@ -116,7 +231,10 @@ export default function HomeScreen() {
 
       setRemainingTime(left);
 
-      if (left === 0) clearInterval(id);
+      if (left === 0) {
+        clearInterval(id);
+        onCompleted();
+      }
     }, 250);
     return () => clearInterval(id);
   }, [endAt]);
@@ -136,6 +254,19 @@ export default function HomeScreen() {
     return `${mm}:${ss}`;
   };
 
+  const getPawRotation = () => {
+    const randomDeg = Math.floor(Math.random() * 51) + 20;
+    return `-${randomDeg}deg`;
+  };
+
+  const getTimerHeader = () => {
+    switch (timerType) {
+      case TimerType.FOCUS: return 'FOCUS SESSION';
+      case TimerType.SHORT: return 'SHORT BREAK';
+      case TimerType.LONG: return 'LONG BREAK';
+    }
+  };
+
   return (
     <SafeAreaView
       style={{
@@ -146,7 +277,7 @@ export default function HomeScreen() {
       }}
       edges={["top", "bottom"]}
     >
-      {!isStarted && (
+      {!isStarted && !isAfterFocus && (
         <View style={styles.typeContainer}>
           <Pressable
             style={
@@ -258,7 +389,18 @@ export default function HomeScreen() {
             strokeLinecap="round"
           />
         </Svg>
-        <View style={{ position: "absolute" }}>
+        <View style={{ position: "absolute", alignItems: "center" }}>
+          <Text
+            style={{
+              fontFamily: "Andika",
+              color: colors.muted,
+              fontWeight: "bold",
+              fontSize: 12,
+              letterSpacing: 2,
+            }}
+          >
+            {getTimerHeader()}
+          </Text>
           <Text
             style={{
               fontFamily: "Andika",
@@ -269,8 +411,38 @@ export default function HomeScreen() {
           >
             {timeToString()}
           </Text>
+          <Text
+            style={{
+              fontFamily: "Andika",
+              color: colors.muted,
+              fontSize: 12,
+            }}
+          >
+            of {Math.floor(durationMs / 10 / 60) / 100} minutes
+          </Text>
         </View>
       </View>
+
+      {timerType === TimerType.FOCUS && (
+        <View style={{alignItems: 'center', marginTop: 24}}>
+        <View style={styles.streakContainer}>
+          {streak.map((item) => (
+            <View
+              key={item.id}
+              style={{ transform: [{ rotate: getPawRotation() }] }}
+            >
+              <PawPrint
+                size={28}
+                color={item.complete ? colors.accent : colors.muted}
+              ></PawPrint>
+            </View>
+          ))}
+        </View>
+          <Text style={{color: colors.muted, fontFamily: 'Andika', marginTop: 6}}>
+            Soft paws, steady progress.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.session}>
         {isOnPause ? (
@@ -310,9 +482,15 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         )}
-        <Pressable style={styles.resetButton} onPress={onResetHandle}>
-          <RotateCcw color={colors.text} />
-        </Pressable>
+        {isAfterFocus ? (
+          <Pressable style={styles.resetButton} onPress={onSkipHandle}>
+            <SkipForward color={colors.text} />
+          </Pressable>
+        ) : (
+          <Pressable style={styles.resetButton} onPress={onResetHandle}>
+            <RotateCcw color={colors.text} />
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -328,31 +506,37 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   typeOptionActive: {
-    padding: 12,
+    paddingHorizontal: 4,
+    paddingVertical: 12,
     backgroundColor: colors.surface,
     borderRadius: 48,
-    width: "33.33%",
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
   },
   typeOptionInactive: {
-    padding: 12,
-    width: "33.33%",
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
   },
   typeTextActive: {
     fontFamily: "Andika",
     color: colors.text,
     fontWeight: "bold",
+    textAlign: "center",
   },
   typeTextInactive: {
     fontFamily: "Andika",
     color: colors.muted,
+    textAlign: "center",
   },
   session: {
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 48,
+    marginTop: 24,
     flexDirection: "row",
   },
   continueButton: {
@@ -381,5 +565,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.surface,
     marginLeft: 12,
+  },
+  streakContainer: {
+    flexDirection: "row",
+    gap: 12,
   },
 });
