@@ -100,17 +100,19 @@ export default function HomeScreen() {
   };
 
   const onCompleted = () => {
-    setStreak((prevStreak) => {
-      let found = false;
+    if (timerType === TimerType.FOCUS) {
+      setStreak((prevStreak) => {
+        let found = false;
 
-      return prevStreak.map((item) => {
-        if (!item.complete && !found) {
-          found = true;
-          return { ...item, complete: true };
-        }
-        return item;
+        return prevStreak.map((item) => {
+          if (!item.complete && !found) {
+            found = true;
+            return { ...item, complete: true };
+          }
+          return item;
+        });
       });
-    });
+    }
 
     onResetHandle();
   };
