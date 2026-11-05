@@ -34,46 +34,6 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ],
-      [
-        "expo-font",
-        {
-          "android": {
-            "fonts": [
-              {
-                "fontFamily": "Andika",
-                "fontDefinitions": [
-                  {
-                    "path": "./assets/fonts/Andika-Regular.ttf",
-                    "weight": 400
-                  },
-                  {
-                    "path": "./assets/fonts/Andika-Italic.ttf",
-                    "weight": 400,
-                    "style": "italic"
-                  },
-                  {
-                    "path": "./assets/fonts/Andika-Bold.ttf",
-                    "weight": 700
-                  },
-                  {
-                    "path": "./assets/fonts/Andika-BoldItalic.ttf",
-                    "weight": 700,
-                    "style": "italic"
-                  }
-                ]
-              }
-            ]
-          },
-          "ios": {
-            "fonts": [
-              "./assets/fonts/Andika-Regular.ttf",
-              "./assets/fonts/Andika-Italic.ttf",
-              "./assets/fonts/Andika-Bold.ttf",
-              "./assets/fonts/Andika-BoldItalic.ttf"
-            ]
-          }
-        }
       ]
     ],
     "experiments": {
