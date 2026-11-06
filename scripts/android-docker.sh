@@ -9,18 +9,18 @@
 #   scripts/android-docker.sh :app:assembleRelease -PreactNativeArchitectures=arm64-v8a
 #
 # Environment overrides:
-#   RN_ANDROID_IMAGE       derived image tag      (default: cucateer-rn-android:ndk27)
+#   RN_ANDROID_IMAGE       derived image tag      (default: cutmer-rn-android:ndk27)
 #   RN_ANDROID_BASE_IMAGE  upstream image          (default: reactnativecommunity/react-native-android:latest)
 #   RN_ANDROID_NDK_VERSION NDK required by RN      (default: 27.1.12297006)
-#   RN_ANDROID_GRADLE_HOME isolated Gradle cache   (default: ~/.cache/cucateer-docker/gradle-home)
+#   RN_ANDROID_GRADLE_HOME isolated Gradle cache   (default: ~/.cache/cutmer-docker/gradle-home)
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE="${RN_ANDROID_IMAGE:-cucateer-rn-android:ndk27}"
+IMAGE="${RN_ANDROID_IMAGE:-cutmer-rn-android:ndk27}"
 BASE_IMAGE="${RN_ANDROID_BASE_IMAGE:-reactnativecommunity/react-native-android:latest}"
 NDK_VERSION="${RN_ANDROID_NDK_VERSION:-27.1.12297006}"
-GRADLE_HOME_DIR="${RN_ANDROID_GRADLE_HOME:-$HOME/.cache/cucateer-docker/gradle-home}"
+GRADLE_HOME_DIR="${RN_ANDROID_GRADLE_HOME:-$HOME/.cache/cutmer-docker/gradle-home}"
 
 TASK="${1:-:app:assembleRelease}"
 shift || true
